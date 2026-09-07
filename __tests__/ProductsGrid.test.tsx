@@ -1,8 +1,9 @@
+import userEvent from "@testing-library/user-event";
+import { render, screen } from "@testing-library/react";
+
 import ProductsGrid from "@/app/components/ProductsGrid";
 import { useCart } from "@/app/context/CartContext";
 import { ProductItem, useCompare } from "@/app/context/CompareContext";
-import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 
 // 1. Mock the custom context hooks
 jest.mock('@/app/context/CartContext', () => ({
