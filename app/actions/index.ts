@@ -23,7 +23,9 @@ export async function getProducts(options?: ProductQueryOptions) {
     const apiUrl = `https://dummyjson.com/products${qs}`;
 
     try {
-        const response = await fetch(apiUrl);
+        const response = await fetch(apiUrl, {
+            next: { revalidate: 1800 }, // Cache products for 30 minutes
+        });
         const products = await response.json();
         return products;
     } catch (error) {
@@ -43,7 +45,9 @@ export async function searchProducts(query: string, options?: ProductQueryOption
     const apiUrl = `https://dummyjson.com/products/search?${params.toString()}`;
 
     try {
-        const response = await fetch(apiUrl);
+        const response = await fetch(apiUrl, {
+            next: { revalidate: 1800 } // Cache search results for 30 minutes
+        });
         const products = await response.json();
         return products;
     } catch (error) {
@@ -56,7 +60,9 @@ export async function getProductById(id: number) {
     const apiUrl = `https://dummyjson.com/products/${id}`;
 
     try {
-        const response = await fetch(apiUrl);
+        const response = await fetch(apiUrl, {
+            next: { revalidate: 1800 } // Cache products for 30 minutes
+        });
         const product = await response.json();
         return product;
     } catch (error) {
@@ -70,7 +76,9 @@ export async function getProductsByCategory(category: string, options?: ProductQ
     const apiUrl = `https://dummyjson.com/products/category/${category}${qs}`;
 
     try {
-        const response = await fetch(apiUrl);
+        const response = await fetch(apiUrl, {
+            next: { revalidate: 1800 } // Cache products for 30 minutes
+        });
         const products = await response.json();
         return products;
     } catch (error) {
@@ -83,7 +91,9 @@ export async function getAllProductCategories() {
     const apiUrl = "https://dummyjson.com/products/categories";
 
     try {
-        const response = await fetch(apiUrl);
+        const response = await fetch(apiUrl, {
+            next: { revalidate: 1800 } // Cache product categories for 30 minutes
+        });
         const categories = await response.json();
         return categories;
     } catch (error) {
