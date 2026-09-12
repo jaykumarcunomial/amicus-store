@@ -1,9 +1,10 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { XMarkIcon, CheckIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
 import { updateProduct } from '../actions'
 import { ProductItem } from '../context/CompareContext'
+import { saveEditedProductToStorage } from '@/helpers/productStorage'
 
 interface EditProductModalProps {
     product: ProductItem
@@ -27,6 +28,19 @@ export default function EditProductModal({
     const [submitting, setSubmitting] = useState(false)
     const [errorMsg, setErrorMsg] = useState<string | null>(null)
     const [successMsg, setSuccessMsg] = useState<string | null>(null)
+
+    useEffect(() => {
+        if (isOpen) {
+            setTitle(product.title || '')
+            setBrand(product.brand || '')
+            setCategory(product.category || '')
+            setPrice(String(product.price || 0))
+            setStock(String(product.stock || 0))
+            setDescription(product.description || '')
+            setErrorMsg(null)
+            setSuccessMsg(null)
+        }
+    }, [isOpen, product])
 
     if (!isOpen) return null
 
@@ -55,9 +69,16 @@ export default function EditProductModal({
         setSubmitting(false)
 
         if (res.success && res.data) {
+            const updatedProduct: ProductItem = {
+                ...product,
+                ...res.data,
+                ...updateData,
+            }
+            saveEditedProductToStorage(updatedProduct)
+
             setSuccessMsg('Product updated successfully via PUT /products/' + product.id)
             if (onUpdated) {
-                onUpdated({ ...product, ...updateData })
+                onUpdated(updatedProduct)
             }
             setTimeout(() => {
                 onClose()

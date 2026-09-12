@@ -1,35 +1,75 @@
 /* eslint-disable @next/next/no-img-element */
 "use client"
 
-import React, { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import {
-    StarIcon,
     ShoppingBagIcon,
     ScaleIcon,
     PencilSquareIcon,
     TrashIcon,
-    CheckIcon,
     ArrowLeftIcon,
     ShieldCheckIcon,
     TruckIcon,
     ArrowPathRoundedSquareIcon,
 } from '@heroicons/react/24/outline'
 import { StarIcon as StarSolid } from '@heroicons/react/20/solid'
+
 import { useCart } from '../context/CartContext'
 import { useCompare, ProductItem } from '../context/CompareContext'
 import { useAuth } from '../context/AuthContext'
+import { getStoredEditedProduct, saveEditedProductToStorage, isProductDeletedInStorage } from '@/helpers/productStorage'
+
 import EditProductModal from './EditProductModal'
 import DeleteProductDialog from './DeleteProductDialog'
 
 export default function ProductDetailClient({ initialProduct }: { initialProduct: ProductItem }) {
     const [product, setProduct] = useState<ProductItem>(initialProduct)
+    const [isDeleted, setIsDeleted] = useState<boolean>(false)
     const [selectedImage, setSelectedImage] = useState<string>(
         (product.images && product.images[0]) || product.thumbnail || ''
     )
     const [quantity, setQuantity] = useState<number>(1)
     const [isEditOpen, setIsEditOpen] = useState<boolean>(false)
     const [isDeleteOpen, setIsDeleteOpen] = useState<boolean>(false)
+
+    // Hydrate product from localStorage if it was previously edited or marked as deleted
+    useEffect(() => {
+        if (isProductDeletedInStorage(initialProduct.id)) {
+            setIsDeleted(true)
+            return
+        }
+
+        const stored = getStoredEditedProduct(initialProduct.id)
+        if (stored) {
+            if ((stored as any).isDeleted) {
+                setIsDeleted(true)
+                return
+            }
+            setProduct((prev) => ({ ...prev, ...stored }))
+        } else {
+            setProduct(initialProduct)
+        }
+    }, [initialProduct])
+
+    // Update document title when product title updates or when deleted
+    useEffect(() => {
+        if (isDeleted) {
+            if (typeof document !== 'undefined') {
+                document.title = 'Product deleted | NextStore'
+            }
+            return
+        }
+        const productTitle = product.title || (product as any).name
+        if (productTitle && typeof document !== 'undefined') {
+            document.title = `${productTitle} | NextStore`
+        }
+    }, [isDeleted, product.title, (product as any).name])
+
+    const handleProductUpdated = (updated: ProductItem) => {
+        setProduct(updated)
+        saveEditedProductToStorage(updated)
+    }
 
     const { addToCart } = useCart()
     const { isInCompare, addToCompare, removeFromCompare } = useCompare()
@@ -39,10 +79,45 @@ export default function ProductDetailClient({ initialProduct }: { initialProduct
     const title = product.title || (product as any).name || 'Product Details'
     const images = product.images && product.images.length > 0 ? product.images : [product.thumbnail || '']
 
+    if (isDeleted) {
+        return (
+            <div className="bg-white min-h-[calc(100vh-8rem)] py-12 px-4 sm:px-6 lg:px-8">
+                <div className="max-w-7xl mx-auto space-y-6">
+                    {/* Navigation */}
+                    <div className="flex items-center text-xs text-gray-500">
+                        <Link href="/" className="hover:text-indigo-600 flex items-center gap-1 font-medium">
+                            <ArrowLeftIcon className="size-3" /> Back to Catalog
+                        </Link>
+                    </div>
+
+                    {/* Deleted Product Message */}
+                    <div className="max-w-xl mx-auto text-center py-16 px-6 bg-gray-50 rounded-3xl border border-gray-200 shadow-xs space-y-4">
+                        <div className="size-16 mx-auto bg-rose-100 text-rose-600 rounded-full flex items-center justify-center">
+                            <TrashIcon className="size-8" />
+                        </div>
+                        <h1 className="text-2xl font-bold text-gray-900">Product deleted</h1>
+                        <p className="text-sm text-gray-600 max-w-md mx-auto">
+                            This product has been deleted from local storage and is no longer available.
+                        </p>
+                        <div className="pt-4 flex items-center justify-center gap-3">
+                            <Link
+                                href="/"
+                                className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-md transition-colors"
+                            >
+                                <ArrowLeftIcon className="size-4" />
+                                Return to Catalog
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
     return (
         <div className="bg-white min-h-[calc(100vh-8rem)] py-8 px-4 sm:px-6 lg:px-8">
             <div className="max-w-7xl mx-auto space-y-8">
-                
+
                 {/* Breadcrumbs & Navigation */}
                 <div className="flex items-center justify-between text-xs text-gray-500">
                     <div className="flex items-center gap-2">
@@ -78,7 +153,7 @@ export default function ProductDetailClient({ initialProduct }: { initialProduct
 
                 {/* Main Product Layout */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                    
+
                     {/* Left: Interactive Image Gallery */}
                     <div className="lg:col-span-6 space-y-4">
                         <div className="aspect-square w-full rounded-3xl bg-gray-100 border border-gray-200 overflow-hidden flex items-center justify-center p-4 relative">
@@ -101,11 +176,10 @@ export default function ProductDetailClient({ initialProduct }: { initialProduct
                                     <button
                                         key={idx}
                                         onClick={() => setSelectedImage(img)}
-                                        className={`size-20 rounded-2xl border-2 bg-gray-50 p-1 shrink-0 overflow-hidden transition-all ${
-                                            selectedImage === img
-                                                ? 'border-indigo-600 ring-2 ring-indigo-500/20'
-                                                : 'border-gray-200 hover:border-gray-300'
-                                        }`}
+                                        className={`size-20 rounded-2xl border-2 bg-gray-50 p-1 shrink-0 overflow-hidden transition-all ${selectedImage === img
+                                            ? 'border-indigo-600 ring-2 ring-indigo-500/20'
+                                            : 'border-gray-200 hover:border-gray-300'
+                                            }`}
                                     >
                                         <img src={img} alt="" className="size-full object-cover rounded-xl" />
                                     </button>
@@ -138,11 +212,10 @@ export default function ProductDetailClient({ initialProduct }: { initialProduct
                                     {[1, 2, 3, 4, 5].map((star) => (
                                         <StarSolid
                                             key={star}
-                                            className={`size-4 ${
-                                                (product.rating || 0) >= star
-                                                    ? 'text-amber-400'
-                                                    : 'text-gray-200'
-                                            }`}
+                                            className={`size-4 ${(product.rating || 0) >= star
+                                                ? 'text-amber-400'
+                                                : 'text-gray-200'
+                                                }`}
                                         />
                                     ))}
                                 </div>
@@ -218,11 +291,10 @@ export default function ProductDetailClient({ initialProduct }: { initialProduct
                                         if (inCompare) removeFromCompare(product.id)
                                         else addToCompare(product)
                                     }}
-                                    className={`p-3 rounded-xl border text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 ${
-                                        inCompare
-                                            ? 'bg-indigo-50 border-indigo-600 text-indigo-700'
-                                            : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                                    }`}
+                                    className={`p-3 rounded-xl border text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 ${inCompare
+                                        ? 'bg-indigo-50 border-indigo-600 text-indigo-700'
+                                        : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                                        }`}
                                     title={inCompare ? "Remove from Compare" : "Add to Compare"}
                                 >
                                     <ScaleIcon className="size-4" />
@@ -254,7 +326,7 @@ export default function ProductDetailClient({ initialProduct }: { initialProduct
 
                 {/* Specifications & Reviews Section */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pt-8 border-t border-gray-200">
-                    
+
                     {/* Specifications */}
                     <div className="lg:col-span-6 space-y-4">
                         <h2 className="text-base font-bold text-gray-900">Technical Specifications</h2>
@@ -306,16 +378,19 @@ export default function ProductDetailClient({ initialProduct }: { initialProduct
                                                 {[1, 2, 3, 4, 5].map((s) => (
                                                     <StarSolid
                                                         key={s}
-                                                        className={`size-3 ${
-                                                            rev.rating >= s ? 'text-amber-400' : 'text-gray-200'
-                                                        }`}
+                                                        className={`size-3 ${rev.rating >= s ? 'text-amber-400' : 'text-gray-200'
+                                                            }`}
                                                     />
                                                 ))}
                                             </div>
                                         </div>
                                         <p className="text-xs text-gray-600 italic">"{rev.comment}"</p>
-                                        <p className="text-[10px] text-gray-400 mt-1">
-                                            {new Date(rev.date).toLocaleDateString()}
+                                        <p className="text-[10px] text-gray-400 mt-1" suppressHydrationWarning>
+                                            {rev.date ? new Date(rev.date).toLocaleDateString('en-US', {
+                                                year: 'numeric',
+                                                month: 'short',
+                                                day: 'numeric',
+                                            }) : ''}
                                         </p>
                                     </div>
                                 ))
@@ -334,7 +409,7 @@ export default function ProductDetailClient({ initialProduct }: { initialProduct
                 product={product}
                 isOpen={isEditOpen}
                 onClose={() => setIsEditOpen(false)}
-                onUpdated={(updated) => setProduct(updated)}
+                onUpdated={handleProductUpdated}
             />
 
             <DeleteProductDialog
@@ -342,6 +417,7 @@ export default function ProductDetailClient({ initialProduct }: { initialProduct
                 productTitle={title}
                 isOpen={isDeleteOpen}
                 onClose={() => setIsDeleteOpen(false)}
+                onDeleted={() => setIsDeleted(true)}
             />
         </div>
     )

@@ -4,12 +4,14 @@ import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { TrashIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
 import { deleteProduct } from '../actions'
+import { removeEditedProductFromStorage, markProductAsDeletedInStorage } from '@/helpers/productStorage'
 
 interface DeleteProductDialogProps {
     productId: number
     productTitle: string
     isOpen: boolean
     onClose: () => void
+    onDeleted?: () => void
 }
 
 export default function DeleteProductDialog({
@@ -17,6 +19,7 @@ export default function DeleteProductDialog({
     productTitle,
     isOpen,
     onClose,
+    onDeleted,
 }: DeleteProductDialogProps) {
     const router = useRouter()
     const [submitting, setSubmitting] = useState(false)
@@ -32,6 +35,11 @@ export default function DeleteProductDialog({
         setSubmitting(false)
 
         if (res.success) {
+            removeEditedProductFromStorage(productId)
+            markProductAsDeletedInStorage(productId)
+            if (onDeleted) {
+                onDeleted()
+            }
             setSuccessMsg('Product deleted successfully via DELETE /products/' + productId)
             setTimeout(() => {
                 onClose()
