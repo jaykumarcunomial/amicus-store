@@ -35,7 +35,9 @@ export interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (credentials: LoginCredentials) => Promise<{ success: boolean; error?: string }>;
-  logout: () => void;
+  logout: () => void | Promise<void>;
   refreshSession: () => Promise<boolean>;
   validateSession: () => Promise<User | null>;
+  updateProfile?: (updatedFields: Partial<User>) => Promise<{ success: boolean; data?: User; error?: string }>;
+  purgeCache?: () => Promise<{ success: boolean }>;
 }

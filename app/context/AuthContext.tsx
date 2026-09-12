@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import type { AuthContextType, LoginCredentials, User } from '../types/auth';
-import { loginUser, getAuthUser, refreshAccessToken } from '../actions/auth';
+import { loginUser, getAuthUser, refreshAccessToken, purgeUserCache, updateUserProfile } from '../actions/auth';
 
 const STORAGE_KEYS = {
   ACCESS_TOKEN: 'dummyjson_access_token',
@@ -31,7 +31,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Clear session helper
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
     setUser(null);
     setAccessToken(null);
     setRefreshToken(null);
@@ -43,6 +43,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       deleteCookie(STORAGE_KEYS.ACCESS_TOKEN);
       deleteCookie(STORAGE_KEYS.REFRESH_TOKEN);
       deleteCookie(STORAGE_KEYS.USER);
+    }
+
+    if (typeof purgeUserCache === 'function') {
+      try {
+        await purgeUserCache();
+      } catch (err) {
+        console.error('Error purging server user cache on logout:', err);
+      }
     }
   }, []);
 
@@ -172,6 +180,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(false);
   }, []);
 
+  // Update user profile and purge cache
+  const updateProfile = useCallback(
+    async (updatedFields: Partial<User>): Promise<{ success: boolean; data?: User; error?: string }> => {
+      if (!user) {
+        return { success: false, error: 'No authenticated user to update' };
+      }
+
+      try {
+        if (typeof updateUserProfile === 'function') {
+          const res = await updateUserProfile(user.id, updatedFields);
+          if (!res.success) {
+            return res;
+          }
+        }
+      } catch (err) {
+        console.error('Error updating user profile via action:', err);
+      }
+
+      // Optimistically update local user state and storage
+      const mergedUser = { ...user, ...updatedFields };
+      setUser(mergedUser);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(mergedUser));
+        setCookie(STORAGE_KEYS.USER, JSON.stringify(mergedUser));
+      }
+
+      if (typeof purgeUserCache === 'function') {
+        try {
+          await purgeUserCache();
+        } catch {
+          // ignore error
+        }
+      }
+
+      return { success: true, data: mergedUser };
+    },
+    [user]
+  );
+
   return (
     <AuthContext.Provider
       value={{
@@ -184,6 +231,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         logout,
         refreshSession,
         validateSession,
+        updateProfile,
+        purgeCache: purgeUserCache,
       }}
     >
       {children}
