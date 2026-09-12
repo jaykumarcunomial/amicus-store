@@ -1,4 +1,4 @@
-import { ProductItem } from '@/app/context/CompareContext'
+import { ProductItem } from '@/app/types'
 
 export const EDITED_PRODUCTS_STORAGE_KEY = 'dummyjson_edited_products'
 export const DELETED_PRODUCTS_STORAGE_KEY = 'dummyjson_deleted_products'

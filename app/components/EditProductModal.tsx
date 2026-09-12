@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react'
 import { XMarkIcon, CheckIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
+
 import { updateProduct } from '../actions'
-import { ProductItem } from '../context/CompareContext'
+import { ProductItem } from '@/app/types'
 import { saveEditedProductToStorage } from '@/helpers/productStorage'
 
 interface EditProductModalProps {

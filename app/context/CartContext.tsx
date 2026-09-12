@@ -1,8 +1,9 @@
 "use client"
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
-import { ProductItem } from './CompareContext'
+
 import { addCartApi, updateCartApi, deleteCartApi } from '../actions'
+import { ProductItem } from '@/app/types'
 import { useAuth } from './AuthContext'
 
 export interface CartItem {

@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { PlusIcon } from "@heroicons/react/20/solid";
+
 import { getProducts, getProductsByCategory, searchProducts } from "./actions";
+import { ProductQueryOptions, ProductItem } from "./types";
+
 import SearchBox from "./components/SearchBox";
 import ProductsGrid from "./components/ProductsGrid";
 import SortDropdown from "./components/SortDropdown";
@@ -26,7 +29,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   const limit = 12;
   const skip = (currentPage - 1) * limit;
 
-  const queryOptions = {
+  const queryOptions: ProductQueryOptions = {
     limit,
     skip,
     sortBy: sortBy || undefined,
@@ -39,7 +42,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
       ? await getProductsByCategory(selectedCategory, queryOptions)
       : await getProducts(queryOptions);
 
-  const products = productsResponse?.products || [];
+  const products: ProductItem[] = productsResponse?.products || [];
   const total = productsResponse?.total || 0;
   const totalPages = Math.ceil(total / limit);
 

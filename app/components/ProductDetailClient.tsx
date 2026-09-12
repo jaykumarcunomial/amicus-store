@@ -16,14 +16,20 @@ import {
 import { StarIcon as StarSolid } from '@heroicons/react/20/solid'
 
 import { useCart } from '../context/CartContext'
-import { useCompare, ProductItem } from '../context/CompareContext'
+import { useCompare } from '../context/CompareContext'
 import { useAuth } from '../context/AuthContext'
+import { ProductItem } from '../types'
 import { getStoredEditedProduct, saveEditedProductToStorage, isProductDeletedInStorage } from '@/helpers/productStorage'
 
 import EditProductModal from './EditProductModal'
 import DeleteProductDialog from './DeleteProductDialog'
 
-export default function ProductDetailClient({ initialProduct }: { initialProduct: ProductItem }) {
+export interface ProductDetailClientProps {
+    initialProduct: ProductItem
+    renderCustomActions?: (product: ProductItem) => React.ReactNode
+}
+
+export default function ProductDetailClient({ initialProduct, renderCustomActions }: ProductDetailClientProps) {
     const [product, setProduct] = useState<ProductItem>(initialProduct)
     const [isDeleted, setIsDeleted] = useState<boolean>(false)
     const [selectedImage, setSelectedImage] = useState<string>(
@@ -42,7 +48,7 @@ export default function ProductDetailClient({ initialProduct }: { initialProduct
 
         const stored = getStoredEditedProduct(initialProduct.id)
         if (stored) {
-            if ((stored as any).isDeleted) {
+            if (stored.isDeleted) {
                 setIsDeleted(true)
                 return
             }
@@ -60,11 +66,11 @@ export default function ProductDetailClient({ initialProduct }: { initialProduct
             }
             return
         }
-        const productTitle = product.title || (product as any).name
+        const productTitle = product.title || product.name
         if (productTitle && typeof document !== 'undefined') {
             document.title = `${productTitle} | NextStore`
         }
-    }, [isDeleted, product.title, (product as any).name])
+    }, [isDeleted, product.title, product.name])
 
     const handleProductUpdated = (updated: ProductItem) => {
         setProduct(updated)
@@ -76,7 +82,7 @@ export default function ProductDetailClient({ initialProduct }: { initialProduct
     const { isAuthenticated } = useAuth()
 
     const inCompare = isInCompare(product.id)
-    const title = product.title || (product as any).name || 'Product Details'
+    const title = product.title || product.name || 'Product Details'
     const images = product.images && product.images.length > 0 ? product.images : [product.thumbnail || '']
 
     if (isDeleted) {
@@ -133,20 +139,26 @@ export default function ProductDetailClient({ initialProduct }: { initialProduct
                     {/* Auth-protected Edit / Delete Actions */}
                     {isAuthenticated && (
                         <div className="flex items-center gap-2">
-                            <button
-                                onClick={() => setIsEditOpen(true)}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-300 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors shadow-2xs"
-                            >
-                                <PencilSquareIcon className="size-3.5 text-indigo-600" />
-                                <span>Edit Product</span>
-                            </button>
-                            <button
-                                onClick={() => setIsDeleteOpen(true)}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-rose-200 bg-rose-50 text-xs font-semibold text-rose-700 hover:bg-rose-100 transition-colors shadow-2xs"
-                            >
-                                <TrashIcon className="size-3.5" />
-                                <span>Delete</span>
-                            </button>
+                            {renderCustomActions ? (
+                                renderCustomActions(product)
+                            ) : (
+                                <>
+                                    <button
+                                        onClick={() => setIsEditOpen(true)}
+                                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-300 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors shadow-2xs"
+                                    >
+                                        <PencilSquareIcon className="size-3.5 text-indigo-600" />
+                                        <span>Edit Product</span>
+                                    </button>
+                                    <button
+                                        onClick={() => setIsDeleteOpen(true)}
+                                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-rose-200 bg-rose-50 text-xs font-semibold text-rose-700 hover:bg-rose-100 transition-colors shadow-2xs"
+                                    >
+                                        <TrashIcon className="size-3.5" />
+                                        <span>Delete</span>
+                                    </button>
+                                </>
+                            )}
                         </div>
                     )}
                 </div>

@@ -2,27 +2,43 @@
 
 import { useEffect, useState, useTransition } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { getAllProductCategories } from '../actions'
 
-type ProductCategory = {
-    slug: string
-    name: string
-    value?: string
-    url?: string
+import { getAllProductCategories } from '../actions'
+import { ProductCategory } from '../types'
+
+export interface SidebarFiltersProps {
+    children: React.ReactNode
+    categories?: ProductCategory[]
+    selectedCategory?: string
+    onSelectCategory?: (category: string) => void
+    title?: string
+    description?: string
 }
 
-export default function SidebarFilters({ children }: { children: React.ReactNode }) {
+export default function SidebarFilters({
+    children,
+    categories: initialCategories,
+    selectedCategory: controlledCategory,
+    onSelectCategory,
+}: SidebarFiltersProps) {
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
     const [isPending, startTransition] = useTransition()
 
-    const [productCategories, setProductCategories] = useState<ProductCategory[] | null>(null)
-    const [loading, setLoading] = useState(true)
+    const [productCategories, setProductCategories] = useState<ProductCategory[] | null>(initialCategories || null)
+    const [loading, setLoading] = useState(!initialCategories)
 
-    const selectedCategory = searchParams.get('category') || ''
+    const urlCategory = searchParams.get('category') || ''
+    const activeCategory = controlledCategory !== undefined ? controlledCategory : urlCategory
 
     useEffect(() => {
+        if (initialCategories) {
+            setProductCategories(initialCategories)
+            setLoading(false)
+            return
+        }
+
         let isMounted = true
 
         async function loadProduct() {
@@ -45,9 +61,14 @@ export default function SidebarFilters({ children }: { children: React.ReactNode
         return () => {
             isMounted = false
         }
-    }, [])
+    }, [initialCategories])
 
     const handleCategoryChange = (val: string) => {
+        if (onSelectCategory) {
+            onSelectCategory(val)
+            return
+        }
+
         const params = new URLSearchParams(searchParams.toString())
         if (val) {
             params.set('category', val)
@@ -106,7 +127,7 @@ export default function SidebarFilters({ children }: { children: React.ReactNode
                                                                 name="category"
                                                                 type="radio"
                                                                 value=""
-                                                                checked={selectedCategory === ''}
+                                                                checked={activeCategory === ''}
                                                                 onChange={() => handleCategoryChange('')}
                                                                 className="col-start-1 row-start-1 appearance-none rounded-full border border-gray-300 bg-white checked:border-indigo-600 checked:bg-indigo-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:border-gray-300 disabled:bg-gray-100 cursor-pointer"
                                                             />
@@ -138,7 +159,7 @@ export default function SidebarFilters({ children }: { children: React.ReactNode
                                                                         name="category"
                                                                         type="radio"
                                                                         value={val}
-                                                                        checked={selectedCategory === val}
+                                                                        checked={activeCategory === val}
                                                                         onChange={() => handleCategoryChange(val)}
                                                                         className="col-start-1 row-start-1 appearance-none rounded-full border border-gray-300 bg-white checked:border-indigo-600 checked:bg-indigo-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:border-gray-300 disabled:bg-gray-100 cursor-pointer"
                                                                     />

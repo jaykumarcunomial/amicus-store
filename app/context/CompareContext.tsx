@@ -2,36 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
 
-export interface ProductItem {
-    id: number
-    title: string
-    price: number
-    discountPercentage?: number
-    rating?: number
-    stock?: number
-    brand?: string
-    category?: string
-    thumbnail?: string
-    images?: string[]
-    description?: string
-    dimensions?: {
-        width?: number
-        height?: number
-        depth?: number
-    }
-    weight?: number
-    warrantyInformation?: string
-    shippingInformation?: string
-    returnPolicy?: string
-    sku?: string
-    tags?: string[]
-    reviews?: {
-        rating: number
-        comment: string
-        date: string
-        reviewerName: string
-    }[]
-}
+import { ProductItem } from '@/app/types'
 
 interface CompareContextType {
     compareList: ProductItem[]

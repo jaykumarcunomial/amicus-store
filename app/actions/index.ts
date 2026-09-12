@@ -1,11 +1,12 @@
 "use server"
 
-export interface ProductQueryOptions {
-    limit?: number;
-    skip?: number;
-    sortBy?: string;
-    order?: 'asc' | 'desc';
-}
+import {
+    ProductQueryOptions,
+    CreateProductInput,
+    UpdateProductInput,
+    ProductItem,
+    ProductActionResponse,
+} from '@/app/types'
 
 function buildQueryString(options?: ProductQueryOptions): string {
     if (!options) return '';
@@ -104,7 +105,7 @@ export async function getAllProductCategories() {
 
 // ---------------- Product CRUD (Add / Update / Delete) ----------------
 
-export async function addProduct(productData: Record<string, unknown>) {
+export async function addProduct(productData: CreateProductInput): Promise<ProductActionResponse<ProductItem>> {
     try {
         const response = await fetch('https://dummyjson.com/products/add', {
             method: 'POST',
@@ -119,7 +120,7 @@ export async function addProduct(productData: Record<string, unknown>) {
     }
 }
 
-export async function updateProduct(id: number, productData: Record<string, unknown>) {
+export async function updateProduct(id: number, productData: UpdateProductInput): Promise<ProductActionResponse<ProductItem>> {
     try {
         const response = await fetch(`https://dummyjson.com/products/${id}`, {
             method: 'PUT',
@@ -134,7 +135,7 @@ export async function updateProduct(id: number, productData: Record<string, unkn
     }
 }
 
-export async function deleteProduct(id: number) {
+export async function deleteProduct(id: number): Promise<ProductActionResponse<ProductItem>> {
     try {
         const response = await fetch(`https://dummyjson.com/products/${id}`, {
             method: 'DELETE',

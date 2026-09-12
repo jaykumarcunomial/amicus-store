@@ -1,8 +1,14 @@
 "use client"
 
+import React from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 
-const SORT_OPTIONS = [
+export interface SortOption {
+    label: string
+    value: string
+}
+
+export const DEFAULT_SORT_OPTIONS: SortOption[] = [
     { label: 'Featured / Default', value: '' },
     { label: 'Price: Low to High', value: 'price-asc' },
     { label: 'Price: High to Low', value: 'price-desc' },
@@ -11,21 +17,46 @@ const SORT_OPTIONS = [
     { label: 'Title: Z to A', value: 'title-desc' },
 ]
 
-export default function SortDropdown() {
+export interface SortDropdownProps {
+    options?: SortOption[]
+    value?: string
+    onChange?: (value: string) => void
+    label?: string
+    id?: string
+    className?: string
+}
+
+export default function SortDropdown({
+    options = DEFAULT_SORT_OPTIONS,
+    value,
+    onChange,
+    label = 'Sort by:',
+    id = 'sort-select',
+    className = '',
+}: SortDropdownProps) {
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
 
+    // Determine current sort value: controlled prop takes precedence, otherwise fallback to URL search params
     const currentSort = searchParams.get('sortBy') || ''
     const currentOrder = searchParams.get('order') || ''
-    const activeValue = currentSort ? `${currentSort}-${currentOrder}` : ''
+    const urlValue = currentSort ? `${currentSort}-${currentOrder}` : ''
+    const activeValue = value !== undefined ? value : urlValue
 
     const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const value = e.target.value
+        const newValue = e.target.value
+
+        if (onChange) {
+            onChange(newValue)
+            return
+        }
+
+        // Default URL navigation behavior
         const params = new URLSearchParams(searchParams.toString())
 
-        if (value) {
-            const [sortBy, order] = value.split('-')
+        if (newValue) {
+            const [sortBy, order] = newValue.split('-')
             params.set('sortBy', sortBy)
             params.set('order', order)
         } else {
@@ -38,17 +69,19 @@ export default function SortDropdown() {
     }
 
     return (
-        <div className="flex items-center gap-2">
-            <label htmlFor="sort-select" className="text-xs font-medium text-gray-500 whitespace-nowrap">
-                Sort by:
-            </label>
+        <div className={`flex items-center gap-2 ${className}`}>
+            {label && (
+                <label htmlFor={id} className="text-xs font-medium text-gray-500 whitespace-nowrap">
+                    {label}
+                </label>
+            )}
             <select
-                id="sort-select"
+                id={id}
                 value={activeValue}
                 onChange={handleChange}
                 className="rounded-lg border border-gray-300 bg-white py-1.5 px-2.5 text-xs text-gray-700 font-medium focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600 cursor-pointer shadow-2xs"
             >
-                {SORT_OPTIONS.map((opt) => (
+                {options.map((opt) => (
                     <option key={opt.value} value={opt.value}>
                         {opt.label}
                     </option>
